@@ -2,6 +2,8 @@
 package main
 
 import (
+	"flag"
+	"fmt"
 	"os"
 
 	"k8s.io/client-go/kubernetes"
@@ -10,9 +12,34 @@ import (
 	"github.com/cri-o/credential-provider/internal/pkg/app"
 	"github.com/cri-o/credential-provider/internal/pkg/config"
 	"github.com/cri-o/credential-provider/internal/pkg/logger"
+	"github.com/cri-o/credential-provider/internal/pkg/version"
 )
 
 func main() {
+	showVersion := flag.Bool("version", false, "Display version information")
+	showVersionJSON := flag.Bool("version-json", false, "Display version information as JSON")
+	flag.Parse()
+
+	if *showVersion || *showVersionJSON {
+		v, err := version.Get()
+		if err != nil {
+			logger.L().Fatalf("Failed to retrieve version: %v", err)
+		}
+
+		if *showVersion {
+			fmt.Print(v)
+		} else if *showVersionJSON {
+			jsonString, err := v.JSONString()
+			if err != nil {
+				logger.L().Fatalf("Failed to retrieve version: %v", err)
+			}
+
+			fmt.Print(jsonString)
+		}
+
+		return
+	}
+
 	if err := app.Run(
 		os.Stdin,
 		config.RegistriesConfPath,
